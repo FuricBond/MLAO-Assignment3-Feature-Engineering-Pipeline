@@ -60,13 +60,13 @@ logger = logging.getLogger("main")
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-BASE_DIR       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_PATH      = os.path.join(BASE_DIR, "data", "employee_attrition.csv")
-PIPELINE_PATH  = os.path.join(BASE_DIR, "models", "feature_pipeline.pkl")
-OUTPUT_DIR     = os.path.join(BASE_DIR, "output")
+BASE_DIR        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_PATH       = os.path.join(BASE_DIR, "data", "employee_attrition.csv")
+PIPELINE_PATH   = os.path.join(BASE_DIR, "models", "feature_pipeline.pkl")
+OUTPUT_DIR      = os.path.join(BASE_DIR, "output")
 TRANSFORMED_CSV = os.path.join(OUTPUT_DIR, "transformed_data.csv")
-HEATMAP_PATH   = os.path.join(OUTPUT_DIR, "missing_value_heatmap.png")
-CORR_PATH      = os.path.join(OUTPUT_DIR, "correlation_heatmap.png")
+HEATMAP_PATH    = os.path.join(OUTPUT_DIR, "missing_value_heatmap.png")
+CORR_PATH       = os.path.join(OUTPUT_DIR, "correlation_heatmap.png")
 IMPORTANCE_PATH = os.path.join(OUTPUT_DIR, "feature_importance.png")
 
 # Number of top features to select
@@ -74,41 +74,20 @@ K_BEST = 20
 
 # Columns to exclude from features (IDs, constants, or target)
 DROP_COLS = [
-    "Attrition",           # target
-    "EmployeeNumber",      # ID
-    "EmployeeCount",       # constant = 1
-    "StandardHours",       # constant = 80
-    "Over18",              # constant = 'Y'
+    "Attrition",       # target
+    "EmployeeNumber",  # ID
+    "EmployeeCount",   # constant = 1
+    "StandardHours",   # constant = 80
+    "Over18",          # constant = 'Y'
 ]
 
 SEPARATOR = "=" * 60
 
 
-def screenshot_prompt(title: str, reason: str) -> None:
-    """
-    Print a clear, formatted screenshot reminder and pause execution
-    until the user presses Enter.
-
-    Parameters
-    ----------
-    title : str
-        Screenshot title.
-    reason : str
-        Why this screenshot is important.
-    """
-    print(f"\n{'=' * 60}")
-    print("  📸  TAKE SCREENSHOT NOW")
-    print(f"{'=' * 60}")
-    print(f"  Screenshot Title : {title}")
-    print(f"  Reason           : {reason}")
-    print(f"{'=' * 60}")
-    input("\n  ▶  Press ENTER to continue … ")
-    print()
-
-
 # ===========================================================================
-# STEP 1 — LOAD DATASET
+# MAIN ORCHESTRATOR
 # ===========================================================================
+
 
 def main() -> None:
     """
@@ -118,7 +97,7 @@ def main() -> None:
     print("  FEATURE ENGINEERING PIPELINE")
     print("  IBM HR Analytics — Employee Attrition & Performance")
     print(f"{'#' * 60}\n")
-    logger.info("Starting Feature Engineering Pipeline …")
+    logger.info("Starting Feature Engineering Pipeline ...")
 
     # Ensure output / models directories exist
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -140,11 +119,6 @@ def main() -> None:
         df, drop_cols=DROP_COLS
     )
 
-    screenshot_prompt(
-        title="Dataset Loaded Successfully — Shape, First 5 Rows, Data Types",
-        reason="Step 1 complete: Dataset loaded and explored.",
-    )
-
     # ──────────────────────────────────────────────────────────────────────
     # STEP 2 — Data Cleaning
     # ──────────────────────────────────────────────────────────────────────
@@ -152,31 +126,16 @@ def main() -> None:
     print("  STEP 2 — DATA CLEANING")
     print(SEPARATOR)
 
-    screenshot_prompt(
-        title="Missing Value Analysis — Before Cleaning",
-        reason="Capture missing value count and duplicate row count.",
-    )
-
     df_clean: pd.DataFrame = prep.clean_data(
         df, numerical_features, categorical_features
     )
 
-    screenshot_prompt(
-        title="Data Cleaning Completed",
-        reason=(
-            "After cleaning: show missing values removed and "
-            "duplicates removed."
-        ),
-    )
-
-    # ── Visualisations ───────────────────────────────────────────────────
+    # ── Visualisations ────────────────────────────────────────────────────
     print(f"\n{SEPARATOR}")
-    print("  📊  GENERATING VISUALISATIONS")
+    print("  GENERATING VISUALISATIONS")
     print(SEPARATOR)
     prep.plot_missing_value_heatmap(df_clean, HEATMAP_PATH)
-    prep.plot_correlation_heatmap(
-        df_clean, numerical_features, CORR_PATH
-    )
+    prep.plot_correlation_heatmap(df_clean, numerical_features, CORR_PATH)
 
     # ──────────────────────────────────────────────────────────────────────
     # Feature split — X and y
@@ -192,13 +151,13 @@ def main() -> None:
     )
 
     # ──────────────────────────────────────────────────────────────────────
-    # STEP 3 — Feature Engineering preview
+    # STEP 3 — Feature Engineering
     # ──────────────────────────────────────────────────────────────────────
     print(f"\n{SEPARATOR}")
     print("  STEP 3 — FEATURE ENGINEERING")
     print(SEPARATOR)
     print("""
-  Transformations to be applied inside the Pipeline:
+  Transformations applied inside the Pipeline:
 
   Numerical Features:
     • SimpleImputer  (strategy = 'mean')
@@ -208,18 +167,6 @@ def main() -> None:
     • SimpleImputer  (strategy = 'most_frequent')
     • OneHotEncoder  (handle_unknown = 'ignore')
 """)
-
-    screenshot_prompt(
-        title="Numerical & Categorical Features Identified",
-        reason="Step 3 preparation: feature lists printed.",
-    )
-
-    screenshot_prompt(
-        title="Feature Engineering — Scaling & Encoding Configuration",
-        reason=(
-            "Show configured transformers before pipeline is built."
-        ),
-    )
 
     # ──────────────────────────────────────────────────────────────────────
     # STEP 5 — Build Pipeline
@@ -236,12 +183,7 @@ def main() -> None:
 
     print(f"\n   Pipeline Steps:")
     for step_name, step_obj in full_pipeline.steps:
-        print(f"   • {step_name} → {type(step_obj).__name__}")
-
-    screenshot_prompt(
-        title="Pipeline Created Successfully",
-        reason="Step 5: Full preprocessing pipeline architecture displayed.",
-    )
+        print(f"   • {step_name} -> {type(step_obj).__name__}")
 
     # ──────────────────────────────────────────────────────────────────────
     # STEP 6 — Transform Dataset
@@ -257,11 +199,6 @@ def main() -> None:
         numerical_features=numerical_features,
         categorical_features=categorical_features,
         output_path=TRANSFORMED_CSV,
-    )
-
-    screenshot_prompt(
-        title="Original Shape vs Transformed Shape",
-        reason="Step 6: Show how the dataset dimensions changed.",
     )
 
     # ──────────────────────────────────────────────────────────────────────
@@ -288,20 +225,6 @@ def main() -> None:
         save_path=IMPORTANCE_PATH,
     )
 
-    screenshot_prompt(
-        title="Feature Selection — Selected Features & Scores",
-        reason=(
-            "Step 4: SelectKBest results — feature names and F-scores."
-        ),
-    )
-
-    screenshot_prompt(
-        title="Transformed Dataset Saved",
-        reason=(
-            "Step 6: Confirm CSV saved to output/transformed_data.csv."
-        ),
-    )
-
     # ──────────────────────────────────────────────────────────────────────
     # STEP 7 — Save Pipeline
     # ──────────────────────────────────────────────────────────────────────
@@ -310,13 +233,6 @@ def main() -> None:
     print(SEPARATOR)
 
     pipe.save_pipeline(full_pipeline, PIPELINE_PATH)
-
-    screenshot_prompt(
-        title="Pipeline Saved Successfully",
-        reason=(
-            "Step 7: feature_pipeline.pkl saved to models/ folder."
-        ),
-    )
 
     # ──────────────────────────────────────────────────────────────────────
     # STEP 8 — Reuse Pipeline
@@ -327,55 +243,30 @@ def main() -> None:
 
     loaded_pipeline = load_pipeline(PIPELINE_PATH)
 
-    screenshot_prompt(
-        title="Pipeline Loaded Successfully",
-        reason="Step 8: Pipeline loaded from disk — ready for inference.",
-    )
-
     new_employees_df = infer.create_sample_employees()
     _ = infer.transform_new_data(loaded_pipeline, new_employees_df)
-
-    screenshot_prompt(
-        title="New Employee Data Transformed Successfully",
-        reason=(
-            "Step 8: New employee records transformed using "
-            "loaded pipeline."
-        ),
-    )
 
     # ──────────────────────────────────────────────────────────────────────
     # Final Summary
     # ──────────────────────────────────────────────────────────────────────
     print(f"\n{SEPARATOR}")
-    print("  📁  OUTPUT FOLDER CONTENTS")
+    print("  OUTPUT FOLDER CONTENTS")
     print(SEPARATOR)
     print(f"\n   Directory: {OUTPUT_DIR}")
     print("-" * 40)
     for filename in sorted(os.listdir(OUTPUT_DIR)):
         filepath = os.path.join(OUTPUT_DIR, filename)
         size = os.path.getsize(filepath)
-        print(f"   📄 {filename:<35}  {size:>10,} bytes")
-
-    screenshot_prompt(
-        title="Output Folder Contents",
-        reason="Show all generated files in the output/ directory.",
-    )
+        print(f"   {filename:<35}  {size:>10,} bytes")
 
     print(f"\n{SEPARATOR}")
-    print("  🌳  FINAL PROJECT STRUCTURE")
+    print("  FINAL PROJECT STRUCTURE")
     print(SEPARATOR)
     _print_project_tree(BASE_DIR)
 
-    screenshot_prompt(
-        title="Final Project Structure",
-        reason=(
-            "Show complete project folder tree with all generated files."
-        ),
-    )
-
     # ──────────────────────────────────────────────────────────────────────
     print(f"\n{'#' * 60}")
-    print("  ✅  PIPELINE EXECUTION COMPLETE")
+    print("  PIPELINE EXECUTION COMPLETE")
     print(f"{'#' * 60}\n")
     logger.info("Feature Engineering Pipeline completed successfully.")
 
@@ -396,11 +287,11 @@ def _print_project_tree(base_dir: str, indent: str = "") -> None:
     entries = sorted(os.listdir(base_dir))
     for i, entry in enumerate(entries):
         full_path = os.path.join(base_dir, entry)
-        connector = "└── " if i == len(entries) - 1 else "├── "
+        connector = "L-- " if i == len(entries) - 1 else "+-- "
         print(f"   {indent}{connector}{entry}")
 
         if os.path.isdir(full_path) and entry not in skip:
-            ext = "    " if i == len(entries) - 1 else "│   "
+            ext = "    " if i == len(entries) - 1 else "|   "
             _print_project_tree(full_path, indent + ext)
 
 
